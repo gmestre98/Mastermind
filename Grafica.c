@@ -4,7 +4,7 @@
 #include "Grafica.h"
 
 
-// Function that initializes the SDL libraray
+// Function that initializes the SDL library
 void InitSDL()
 {
   if(SDL_Init(SDL_INIT_EVERYTHING) == -1)
@@ -57,7 +57,7 @@ SDL_Renderer* CreateRenderer(int width, int height, SDL_Window *window)
   renderer = SDL_CreateRenderer(window, -1, 0);
   if(renderer == NULL)
   {
-    printf("Failed to create a renderer")
+    printf("Failed to create a renderer");
   }
 }
 
@@ -80,7 +80,7 @@ int RenderText(int x, int y, const char *text, TTF_Font *font, SDL_Color *color,
   TextBox.x=x;
   TextBox.y=y;
   // creating a surface from the string with the defined font
-  text_surface == TTF_RenderText_Blended(font, text, *color);
+  text_surface = TTF_RenderText_Blended(font, text, *color);
   if(text_surface == NULL)
   {
     printf("TTF_RenderText_Blended: %s\n", TTF_GetError());
@@ -132,3 +132,45 @@ void RenderImage(SDL_Renderer *renderer, char string[], int x, int y)
   SDL_DestroyTexture(Img_Texture);
   SDL_FreeSurface(Img_Surface);
 }
+
+
+/* Function that initializes the renderer, the window and all fonts
+    param: width of the window
+    param: height of the window
+    param: font serif
+    param: font Demonized
+    param: font Queen
+    param: the window for the game
+    param: the renderer to handle all rendering in the window
+*/
+void InitEverything(int width, int height, TTF_Font **_font, TTF_Font **_font2, TTF_Font **_font3,
+                    SDL_Window** _window, SDL_Renderer** _renderer)
+{
+    InitSDL();
+    InitFont();
+    *_window = CreateWindow(width, height);
+    *_renderer = CreateRenderer(width, height, *_window);
+
+    *_font = TTF_OpenFont(".//Fontes//FreeSerif.ttf", 16);
+    if(!*_font)
+    {
+        printf("TTF_OpenFont: %s\n", TTF_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    *_font2 = TTF_OpenFont(".//Fontes//Demonized.ttf", 24);
+    if(!* _font2)
+    {
+        printf("TTF_OpenFont: %s\n", TTF_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    *_font3 = TTF_OpenFont(".//Fontes//Queen.ttf", 24);
+    if(!* _font3)
+    {
+        printf("TTF_OpenFont: %s\n", TTF_GetError());
+        exit(EXIT_FAILURE);
+    }
+}
+
+//void RenderBoard()
