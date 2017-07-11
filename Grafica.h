@@ -12,3 +12,6 @@ SDL_Renderer *CreateRenderer(int, int, SDL_Window *);
 int RenderText(int, int, const char *, TTF_Font *, SDL_Color *, SDL_Renderer *);
 void RenderImage(SDL_Renderer *, char [], int, int);
 void InitEverything(int, int, TTF_Font **, TTF_Font **, TTF_Font **, SDL_Window **, SDL_Renderer **);
+void RenderBoard(SDL_Renderer *, int, SDL_Surface **);
+void LoadAvaluations(SDL_Surface **);
+void UnloadAvaluations(SDL_Surface **);

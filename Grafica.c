@@ -59,6 +59,9 @@ SDL_Renderer* CreateRenderer(int width, int height, SDL_Window *window)
   {
     printf("Failed to create a renderer");
   }
+
+  SDL_RenderSetLogicalSize(renderer, WIDTH, HEIGHT);
+  return renderer;
 }
 
 
@@ -173,4 +176,86 @@ void InitEverything(int width, int height, TTF_Font **_font, TTF_Font **_font2, 
     }
 }
 
-//void RenderBoard()
+/* Function renders the board for the game
+    param: the renderer to handle all rendering in the window
+    param: size of the board, number of pieces per play
+*/
+void RenderBoard(SDL_Renderer *renderer, int boardsize, SDL_Surface **Avaluations)
+{
+    int i = 0;
+    int j = 0;
+    int holex = FIRSTPIECEX;
+    int holey = FIRSTPIECEY;
+    int xcorrect = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX;
+    SDL_Rect BoardPos;
+    SDL_Texture *AvalTexture;
+
+    // Rendering the background image
+    RenderImage(renderer, "Fundo.bmp", BACKGROUNDX, BACKGROUNDY);
+    // Rendering the number of each play
+    RenderImage(renderer, "Numeros_Jogada.bmp", xcorrect + NUMBERX, NUMBERSY);
+
+    // Rendering the pieces for each play
+    for(i=0; i < MAXPLAYS; i++)
+    {
+        holex = xcorrect;
+        for(j=0; j < boardsize; j++)
+        {
+            RenderImage(renderer, "Hole.bmp", holex, holey);
+            holex += PIECESIZE;
+        }
+        holey += PIECESIZE;
+    }
+    xcorrect += boardsize*PIECESIZE + EXTRAPOS/2;
+    AvalTexture = SDL_CreateTextureFromSurface(renderer, Avaluations[boardsize-MINLEVEL]);
+    BoardPos.x = xcorrect;
+    BoardPos.y = AVALY;
+    BoardPos.w = (Avaluations[boardsize-MINLEVEL])->w + EXTRAPOS;
+    BoardPos.h = (Avaluations[boardsize-MINLEVEL])->h + EXTRAPOS;
+    for(i=0; i < MAXPLAYS; i++)
+    {
+        SDL_RenderCopy(renderer, AvalTexture, NULL, &BoardPos);
+        BoardPos.y += PIECESIZE;
+    }
+    SDL_DestroyTexture(AvalTexture);
+    xcorrect += (BoardPos.w + EXTRAPOS);
+    // Rendering the block of colors
+    RenderImage(renderer, "Cores.bmp", xcorrect, COLORSY);
+
+}
+
+
+/* Function that initializes the array of the avaluation images
+    param: Array of the avaluation images
+*/
+void LoadAvaluations(SDL_Surface **Avaluations)
+{
+    int i = 0;
+    char filename[MAXSTR] = {0};
+
+    for(i=0; i < MAX_LEVELS; i++)
+    {
+        // Reading the filename
+        sprintf(filename, ".//Avaluations//Aval_%01d.jpg", i+MINLEVEL);
+        // Opening the image
+        Avaluations[i] = IMG_Load(filename);
+        if(Avaluations[i] == NULL)
+        {
+            printf("ERROR! It was not possible to read the avaluation image %d", i+MINLEVEL);
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
+/* Function that frees the memory for all the avaluation images
+    param: Array of the avaluation images
+*/
+void UnloadAvaluations(SDL_Surface **Avaluations)
+{
+    int i = 0;
+
+    for(i=0; i < MAX_LEVELS; i++)
+    {
+        SDL_FreeSurface(Avaluations[i]);
+    }
+}

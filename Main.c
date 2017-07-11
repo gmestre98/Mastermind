@@ -11,17 +11,21 @@ int main(void)
     SDL_Window *window = NULL;                                          // Window
     SDL_Renderer *renderer = NULL;                                      // Renderer
     SDL_Event event;                                                    // Event
+    SDL_Surface *Avaluations[MAX_LEVELS];                               // Array of the valuation images
     TTF_Font *serif = NULL;                                             // Font serif
     TTF_Font *Demonized = NULL;                                         // Font Demonized
     TTF_Font *Queen = NULL;                                             // Font Queen
     int delay = 100;                                                    // Delay for the renderer
     int quit = 0;                                                       // Quit Flag
+    int boardsize = 0;                                                  // Number of colors per play
 
 
 
+    printf("Introduza o tamanho do tabuleiro!\n");
+    scanf("%d", &boardsize);
 
     InitEverything(WIDTH, HEIGHT,&serif, &Demonized, &Queen, &window, &renderer);
-
+    LoadAvaluations(Avaluations);
     while(quit == 0)
     {
         while(SDL_PollEvent (&event))
@@ -53,13 +57,14 @@ int main(void)
                 }
             }
         }
-        RenderImage(renderer, "Fundo.bmp", BOARDX, BOARDY);
+        RenderBoard(renderer, boardsize, Avaluations);
         SDL_RenderPresent(renderer);
         SDL_Delay(delay);
     }
     TTF_CloseFont(serif);
     TTF_CloseFont(Demonized);
     TTF_CloseFont(Queen);
+    UnloadAvaluations(Avaluations);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
