@@ -15,3 +15,7 @@ void InitEverything(int, int, TTF_Font **, TTF_Font **, TTF_Font **, SDL_Window 
 void RenderBoard(SDL_Renderer *, int, SDL_Surface **);
 void LoadAvaluations(SDL_Surface **);
 void UnloadAvaluations(SDL_Surface **);
+void LoadColors(SDL_Surface **);
+void UnloadColors(SDL_Surface **);
+void RenderFromArray(SDL_Renderer *, SDL_Surface **, int, int, int);
+void RenderPlay(SDL_Renderer *, int, int);

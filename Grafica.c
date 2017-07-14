@@ -221,6 +221,7 @@ void RenderBoard(SDL_Renderer *renderer, int boardsize, SDL_Surface **Avaluation
     xcorrect += (BoardPos.w + EXTRAPOS);
     // Rendering the block of colors
     RenderImage(renderer, "Cores.bmp", xcorrect, COLORSY);
+    RenderImage(renderer, "Nome.bmp", XNOME, YNOME);
 
 }
 
@@ -247,6 +248,7 @@ void LoadAvaluations(SDL_Surface **Avaluations)
     }
 }
 
+
 /* Function that frees the memory for all the avaluation images
     param: Array of the avaluation images
 */
@@ -258,4 +260,70 @@ void UnloadAvaluations(SDL_Surface **Avaluations)
     {
         SDL_FreeSurface(Avaluations[i]);
     }
+}
+
+
+/* Function that initializes the array of the color images
+    param: Array of the color images
+*/
+void LoadColors(SDL_Surface **Colors)
+{
+    int i = 0;
+    char filename[MAXSTR] = {0};
+
+    for(i=0; i < NMBRCOLORS; i++)
+    {
+        // Reading the filename
+        sprintf(filename, ".//Colors//Cor%01d.jpg", i+1);
+        // Opening the image
+        Colors[i] = IMG_Load(filename);
+        if(Colors[i] == NULL)
+        {
+            printf("ERROR! It was not possible to read the color image %d", i+1);
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
+
+/* Function that frees the memory for all the color images
+    param: Array of the color images
+*/
+void UnloadColors(SDL_Surface **Colors)
+{
+    int i = 0;
+
+    for(i=0; i < NMBRCOLORS; i++)
+    {
+        SDL_FreeSurface(Colors[i]);
+    }
+}
+
+
+/* Function that renders an image from an array of images at the chosen coordinates
+    param: the renderer to handle all rendering in the window
+    param: Array of images
+    param: Index for the image
+    param: X coordinate
+    param: Y coordinate
+*/
+void RenderFromArray(SDL_Renderer *renderer, SDL_Surface **Array, int index, int x, int y)
+{
+    SDL_Rect BoardPos;
+    SDL_Texture *ImgTexture;
+
+    ImgTexture = SDL_CreateTextureFromSurface(renderer, Array[index]);
+    BoardPos.x = x;
+    BoardPos.y = y;
+    BoardPos.w = (Array[index])->w;
+    BoardPos.h = (Array[index])->h;
+    SDL_RenderCopy(renderer, ImgTexture, NULL, &BoardPos);
+    SDL_DestroyTexture(ImgTexture);
+}
+
+void RenderPlay(SDL_Renderer *renderer, int nplays, int boardsize)
+{
+    int x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + PLAYX;
+    int y = FIRSTPIECEY + (MAXNPLAYS - nplays)*YPERPLAY;
+    RenderImage(renderer, "Play.bmp", x, y);
 }
