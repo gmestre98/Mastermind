@@ -630,4 +630,8 @@ void RenderNewGame(SDL_Renderer *renderer, TTF_Font *Queen, TTF_Font *QueenBig, 
     RenderText(XTITLE, YTITLE, "Mastermind", QueenBig, &white, renderer);
     RenderImage(renderer, "NameBox.bmp", XNAME, YNAME);
     RenderText(XINFNAME, YINFNAME, "Introduza um nome de jogador!", Queen, &white, renderer);
+    if(boardsize != 0)
+    {
+        RenderImage(renderer, "Bordo.bmp", XNUMEROS, YNUMEROS + (boardsize-MINLEVEL)*NUMBERSIZE);
+    }
 }

@@ -32,6 +32,8 @@ int main(void)
     int blacks[MAXAVALARRS] = {0};                                      // Array with the number of correct pieces in the right places per play
     int whites[MAXAVALARRS] = {0};                                      // Array with the number of correct pieces in the wrong places per play
     int gamestate = 0;                                                  // Current menu (0-Home, 1 - Current Game, 2 New Game, 3 Statistics)
+    char *playername = NULL;                                            // Name of the player
+    int nameread = 0;                                                   // Variable that indicates if the reading of the player name is on
 
 
     printf("Introduza o tamanho do tabuleiro!\n");
@@ -115,7 +117,7 @@ int main(void)
                 Win(renderer, nplays, blacks, boardsize);
                 break;
             case 2:
-                RenderNewGame(renderer, Queen, QueenBig);
+                RenderNewGame(renderer, Queen, QueenBig, playername, boardsize);
                 break;
             case 3:
                 break;

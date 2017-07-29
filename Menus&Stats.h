@@ -7,3 +7,4 @@
 
 void BottomSelect(SDL_Event, int *);
 void HomeSelect(SDL_Event, int *);
+void SizeSelect(SDL_Event, int *);

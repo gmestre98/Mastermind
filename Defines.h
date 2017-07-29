@@ -72,6 +72,8 @@
 #define YTITLE      70
 #define XNUMEROS    510
 #define YNUMEROS    180
+#define NUMBERSIZE  90
+#define NUMBERWIDTH 80
 #define XNAME       80
 #define YNAME       280
 #define XINFNAME    120
