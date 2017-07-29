@@ -1,13 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
-#include "Defines.h"
+#include "Grafica.h"
 
-typedef struct{
-    int *colors;
-}Play;
 
 void ChooseColor(SDL_Event, SDL_Surface **, int *, int);
-void PutPiece(SDL_Event, int, int);
+void PutPiece(SDL_Event, int, int, int, int [][MAXBOARD]);
+int CompleteLine(int, int, int [][MAXBOARD]);
+int *Generate(int);
+void Avaluate(int *, int [][MAXBOARD], int, int, int [], int []);
+int Loss(SDL_Renderer *, int);
+int Win(SDL_Renderer *, int, int [], int);

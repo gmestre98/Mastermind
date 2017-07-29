@@ -5,6 +5,13 @@
 #include <SDL2/SDL_image.h>
 #include "Play.h"
 
+
+/* Function that allows the player to choose the color of the next piece to places
+    param: the event that happened, being in this case a mouse event
+    param: Array of the avaluation images
+    param: Number corresponding to the selected color
+    param: size of the board, number of pieces per play
+*/
 void ChooseColor(SDL_Event event, SDL_Surface **Avaluations, int *selecolor, int boardsize)
 {
     int NumbersX = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX +
@@ -48,7 +55,15 @@ void ChooseColor(SDL_Event event, SDL_Surface **Avaluations, int *selecolor, int
     }
 }
 
-void PutPiece(SDL_Event event, int nplays, int boardsize)
+
+/* Function that allows the user to place a piece in the board
+    param: the event that happened, being in this case a mouse event
+    param: variable indicating how many plays have already been made
+    param: size of the board, number of pieces per play
+    param: Number corresponding to the selected color
+    param: Matrix with the selected pieces by the user for the current game
+*/
+void PutPiece(SDL_Event event, int nplays, int boardsize, int selecolor, int game [][MAXBOARD])
 {
     int startx = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX;
     int endx = startx + boardsize*PIECESIZE;
@@ -61,33 +76,134 @@ void PutPiece(SDL_Event event, int nplays, int boardsize)
     {
         linepos = event.button.x - startx;
         linepos = linepos*2*boardsize/(endx-startx);
-        switch (linepos) {
-            case 0:
-                printf("Pos1\n");
-                break;
-            case 2:
-                printf("Pos2\n");
-                break;
-            case 4:
-                printf("Pos3\n");
-                break;
-            case 6:
-                printf("Pos4\n");
-                break;
-            case 8:
-                printf("Pos5\n");
-                break;
-            case 10:
-                printf("Pos6\n");
-                break;
-            case 12:
-                printf("Pos7\n");
-                break;
-            case 14:
-                printf("Pos8\n");
-                break;
-            default:
-                break;
+        linepos = linepos/2;
+        game[nplays][linepos] = selecolor;
+    }
+}
+
+
+/* Function that verifies if the current line is already complete
+    param: variable indicating how many plays have already been made
+    param: size of the board, number of pieces per play
+    param: Matrix with the selected pieces by the user for the current game
+    return: return 1 if the line is complete, else returns 0
+*/
+int CompleteLine(int nplays, int boardsize, int game [][MAXBOARD])
+{
+    int i = 0;
+    int a = 1;
+    for(i=0; i < boardsize; i++)
+    {
+        if(game[nplays][i] == 0)
+        {
+            a = 0;
         }
+    }
+    return a;
+}
+
+
+/* Function that generates a random combination of colors
+    param: size of the board, number of pieces per play
+    return: the array with the generated combination
+*/
+int* Generate(int boardsize)
+{
+    int *combination = NULL;
+    int i = 0;
+    srand(time(NULL));
+    combination = (int*)calloc(boardsize, sizeof(int));
+    if(combination == NULL)
+    {
+        printf("ERROR! It was not possible to allocate memory for the combination\n");
+        exit(EXIT_FAILURE);
+    }
+    for(i=0; i < boardsize; i++)
+    {
+        combination[i] = (rand() %NMBRCOLORS + 1);
+    }
+    return combination;
+}
+
+
+/* Function that avaluates the play upon completion of the line
+    param: array with the generated combination
+    param: Matrix with the selected pieces by the user for the current game
+    param: variable indicating how many plays have already been made
+    param: size of the board, number of pieces per play
+    param: pointer to the number of correct but misplaced pieces in the last play
+    param: pointer to the number of correct placed pieces in the last play
+*/
+void Avaluate(int *combination, int game[][MAXBOARD], int nplays, int boardsize, int whites [], int blacks[])
+{
+    int i = 0;
+    int j = 0;
+    int aux[MAXBOARD] = {0};
+    int auxgame[MAXBOARD] = {0};
+
+    for(i=0; i < boardsize; i++)
+    {
+        aux[i] = combination[i];
+        auxgame[i] = game[nplays][i];
+    }
+    for(i=0; i < boardsize; i++)
+    {
+        if(auxgame[i] == aux[i])
+        {
+            aux[i] = 0;
+            auxgame[i] = 0;
+            blacks[nplays] = blacks[nplays] + 1;
+        }
+    }
+    for(i=0; i < boardsize; i++)
+    {
+        j = 0;
+        while(j < boardsize  &&  game[nplays][i] != aux[j])
+        {
+            j++;
+        }
+        if(j < boardsize)
+        {
+            aux[j] = 0;
+            whites[nplays] = whites[nplays] + 1;
+        }
+    }
+}
+
+
+/* Function to check if the player has lost and to render the correct image
+    param: the renderer to handle all the rendering in the window
+    param: variable indicating how many plays have already been made
+*/
+int Loss(SDL_Renderer *renderer, int nplays)
+{
+    if(nplays == 10)
+    {
+        RenderImage(renderer, "Defeat.bmp", XDEFEAT, YDEFEAT);
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+
+/* Function to check if the player won the game and to render the correct image
+    param: the renderer to handle all the rendering in the window
+    param: variable indicating how many plays have already been made
+    param: Array with the number of correct pieces in the right places per play
+    param: size of the board, number of pieces per play
+*/
+int Win(SDL_Renderer *renderer, int nplays, int blacks[], int boardsize)
+{
+    if(blacks[nplays-1] == boardsize)
+    {
+        RenderImage(renderer, "Win.bmp", XWIN, YWIN);
+        return 1;
+    }
+    else
+    {
+        return 0;
     }
 }
