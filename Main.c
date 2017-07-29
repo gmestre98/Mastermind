@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
 #include "Defines.h"
-#include "Grafica.h"
 #include "Play.h"
+#include "Menus&Stats.h"
 
 int main(void)
 {
@@ -17,6 +18,8 @@ int main(void)
     TTF_Font *serif = NULL;                                             // Font serif
     TTF_Font *Demonized = NULL;                                         // Font Demonized
     TTF_Font *Queen = NULL;                                             // Font Queen
+    TTF_Font *QueenBig = NULL;                                          // Font Queen in a bigger size
+    TTF_Font *Targa = NULL;                                             // Font Targa
     int delay = 100;                                                    // Delay for the renderer
     int quit = 0;                                                       // Quit Flag
     int boardsize = 0;                                                  // Number of colors per play
@@ -24,12 +27,18 @@ int main(void)
     int xmouse = 0;                                                     // X Coordinate of the mouse
     int ymouse = 0;                                                     // Y Coordinate of the mouse
     int nplays = 0;                                                     // Number of plays already made
+    int game [MAXPLAYS][MAXBOARD] = {{0}};                              // Matrix with the plays for the current game
+    int *combination = NULL;                                            // Random Generated combination
+    int blacks[MAXAVALARRS] = {0};                                      // Array with the number of correct pieces in the right places per play
+    int whites[MAXAVALARRS] = {0};                                      // Array with the number of correct pieces in the wrong places per play
+    int gamestate = 0;                                                  // Current menu (0-Home, 1 - Current Game, 2 New Game, 3 Statistics)
 
 
     printf("Introduza o tamanho do tabuleiro!\n");
     scanf("%d", &boardsize);
 
-    InitEverything(WIDTH, HEIGHT,&serif, &Demonized, &Queen, &window, &renderer);
+    combination = Generate(boardsize);
+    InitEverything(WIDTH, HEIGHT,&serif, &Demonized, &Queen, &QueenBig, &Targa, &window, &renderer);
     LoadAvaluations(Avaluations);
     LoadColors(Colors);
     while(quit == 0)
@@ -56,21 +65,65 @@ int main(void)
                 switch(event.button.button)
                 {
                     case SDL_BUTTON_LEFT:
-                        ChooseColor(event, Avaluations, &selecolor, boardsize);
-                        PutPiece(event, nplays, boardsize);
+                        BottomSelect(event, &gamestate);
+                        switch(gamestate)
+                        {
+                            case 0:
+                                HomeSelect(event, &gamestate);
+                                break;
+                            case 1:
+                                if(Loss(renderer, nplays) != 1 && Win(renderer, nplays, blacks, boardsize) != 1)
+                                {
+                                    ChooseColor(event, Avaluations, &selecolor, boardsize);
+                                    PutPiece(event, nplays, boardsize, selecolor, game);
+                                    if(CompleteLine(nplays, boardsize, game) == 1)
+                                    {
+                                        Avaluate(combination, game, nplays, boardsize, whites, blacks);
+                                        nplays ++;
+                                    }
+                                }
+                                break;
+                            case 2:
+                                break;
+                            case 3:
+                                break;
+                            default:
+                                break;
+                        }
                         break;
                     default:
                         break;
                 }
             }
         }
-        RenderBoard(renderer, boardsize, Avaluations);
-        SDL_GetMouseState(&xmouse, &ymouse);
-        if(selecolor != 0)
+        switch(gamestate)
         {
-            RenderFromArray(renderer, Colors, selecolor - 1, xmouse - COLORCORR, ymouse - COLORCORR);
+            case 0:
+                RenderHome(renderer, Queen, QueenBig);
+                break;
+            case 1:
+                RenderBoard(renderer, boardsize, Avaluations);
+                SDL_GetMouseState(&xmouse, &ymouse);
+                if(selecolor != 0)
+                {
+                    RenderFromArray(renderer, Colors, selecolor - 1, xmouse - COLORCORR, ymouse - COLORCORR);
+                }
+                RenderPlay(renderer, nplays, boardsize);
+                RenderPieces(renderer, Colors, game, boardsize);
+                RenderAval(renderer, boardsize, blacks, whites, nplays);
+                Loss(renderer, nplays);
+                Win(renderer, nplays, blacks, boardsize);
+                break;
+            case 2:
+                RenderNewGame(renderer, Queen, QueenBig);
+                break;
+            case 3:
+                break;
+            default:
+                break;
         }
-        RenderPlay(renderer, nplays, boardsize);
+        RenderImage(renderer, "Preto.bmp", XMENU, YMENU);
+        RenderMenu(renderer, Queen);
         SDL_RenderPresent(renderer);
         SDL_Delay(delay);
     }

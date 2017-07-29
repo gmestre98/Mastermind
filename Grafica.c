@@ -147,7 +147,7 @@ void RenderImage(SDL_Renderer *renderer, char string[], int x, int y)
     param: the renderer to handle all rendering in the window
 */
 void InitEverything(int width, int height, TTF_Font **_font, TTF_Font **_font2, TTF_Font **_font3,
-                    SDL_Window** _window, SDL_Renderer** _renderer)
+                    TTF_Font **_font4, TTF_Font **_font5, SDL_Window** _window, SDL_Renderer** _renderer)
 {
     InitSDL();
     InitFont();
@@ -168,8 +168,22 @@ void InitEverything(int width, int height, TTF_Font **_font, TTF_Font **_font2, 
         exit(EXIT_FAILURE);
     }
 
-    *_font3 = TTF_OpenFont(".//Fontes//Queen.ttf", 24);
+    *_font3 = TTF_OpenFont(".//Fontes//Queen.ttf", 18);
     if(!* _font3)
+    {
+        printf("TTF_OpenFont: %s\n", TTF_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    *_font4 = TTF_OpenFont(".//Fontes//Queen.ttf", 40);
+    if(!* _font4)
+    {
+        printf("TTF_OpenFont: %s\n", TTF_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    *_font5 = TTF_OpenFont(".//Fontes//Targa.ttf", 14);
+    if(!* _font5)
     {
         printf("TTF_OpenFont: %s\n", TTF_GetError());
         exit(EXIT_FAILURE);
@@ -321,9 +335,299 @@ void RenderFromArray(SDL_Renderer *renderer, SDL_Surface **Array, int index, int
     SDL_DestroyTexture(ImgTexture);
 }
 
+
+/* Function that renders an arrow indicating the current Play
+    param: the renderer to handle all the rendering in the window
+    param: variable indicating how many plays have already been made
+    param: size of the board, number of pieces per play
+*/
 void RenderPlay(SDL_Renderer *renderer, int nplays, int boardsize)
 {
     int x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + PLAYX;
     int y = FIRSTPIECEY + (MAXNPLAYS - nplays)*YPERPLAY;
+    if(nplays < 10)
+    {
+        y = FIRSTPIECEY + (MAXNPLAYS - nplays)*YPERPLAY;
+    }
+    else
+    {
+        y = FIRSTPIECEY;
+    }
     RenderImage(renderer, "Play.bmp", x, y);
+}
+
+
+/* Function that renders the pieces chosen by the user to put in the board
+    param: the renderer to handle all the rendering in the window
+    param: Array of the color images
+    param: Matrix with the selected pieces by the user for the current game
+    param: size of the board, number of pieces per play
+*/
+void RenderPieces(SDL_Renderer *renderer, SDL_Surface **Colors, int game[][MAXBOARD], int boardsize)
+{
+    int i = 0;
+    int j = 0;
+    int x = 0;
+    int y = 0;
+    int startx = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX;
+
+    for(i=0; i < MAXPLAYS; i++)
+    {
+        y = FIRSTPIECEY + (MAXNPLAYS - i)*YPERPLAY + YPIECECORR;
+        for(j=0; j < boardsize; j++)
+        {
+            x = startx + j*PIECESIZE + XPIECECORR;
+            if(game[i][j] != 0)
+            {
+                RenderFromArray(renderer, Colors, game[i][j] - 1, x, y);
+            }
+        }
+    }
+}
+
+
+/* Function to render the avaluation for the 4,6,8 boards
+    param: the renderer to handle all the renderering in the window
+    param: size of the board, number of pieces per play
+    param: Array with the number of correct pieces in the right places per play
+    param: Array with the number of correct pieces in the wrong places per play
+    param: variable indicating how many plays have already been made
+*/
+void RenderAvalPair(SDL_Renderer *renderer, int boardsize, int blacks[], int whites[], int nplays)
+{
+    int i = 0;
+    int j = 0;
+    int x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + boardsize*PIECESIZE + EXTRAPOS + AVALCORRX;
+    int y = FIRSTPIECEY + (MAXNPLAYS - i)*YPERPLAY + YPIECECORR;
+    int bl = 0;
+    int wh = 0;
+    for(j=0; j < nplays; j++)
+    {
+        bl = blacks[j];
+        i=0;
+        x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + boardsize*PIECESIZE + EXTRAPOS + AVALCORRX;
+        y = FIRSTPIECEY + (MAXNPLAYS - j)*YPERPLAY + YPIECECORR + AVALCORRY;
+        while(bl != 0)
+        {
+            bl --;
+            RenderImage(renderer, "Black.bmp", x, y);
+            y += AVALPOS;
+            i++;
+            if(i%2 == 0)
+            {
+                x += AVALPOS;
+                y = FIRSTPIECEY + (MAXNPLAYS - j)*YPERPLAY + YPIECECORR + AVALCORRY;
+            }
+        }
+        wh = whites[j];
+        while(wh != 0)
+        {
+            wh --;
+            RenderImage(renderer, "White.bmp", x, y);
+            y += AVALPOS;
+            i++;
+            if(i%2 == 0)
+            {
+                x += AVALPOS;
+                y = FIRSTPIECEY + (MAXNPLAYS - j)*YPERPLAY + YPIECECORR + AVALCORRY;
+            }
+        }
+    }
+}
+
+
+/* Function to render the avaluation for the 5 board
+    param: the renderer to handle all the renderering in the window
+    param: size of the board, number of pieces per play
+    param: Array with the number of correct pieces in the right places per play
+    param: Array with the number of correct pieces in the wrong places per play
+    param: variable indicating how many plays have already been made
+*/
+void RenderAvalFive(SDL_Renderer *renderer, int boardsize, int blacks[], int whites[], int nplays)
+{
+    int i = 0;
+    int j = 0;
+    int x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + boardsize*PIECESIZE + EXTRAPOS + AVALCORRX;
+    int y = FIRSTPIECEY + (MAXNPLAYS - i)*YPERPLAY + YPIECECORR;
+    int bl = 0;
+    int wh = 0;
+    for(j=0; j <= nplays; j++)
+    {
+        bl = blacks[j];
+        i=0;
+        x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + boardsize*PIECESIZE + EXTRAPOS + AVALCORRX;
+        y = FIRSTPIECEY + (MAXNPLAYS - j)*YPERPLAY + YPIECECORR + AVALCORRY;
+        while(bl != 0)
+        {
+            bl --;
+            RenderImage(renderer, "Black.bmp", x, y);
+            y += AVALPOS;
+            i++;
+            if(i == 2)
+            {
+                x += 2*AVALPOS;
+                y = FIRSTPIECEY + (MAXNPLAYS - j)*YPERPLAY + YPIECECORR + AVALCORRY;
+            }
+            else if( i == 4)
+            {
+                x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + boardsize*PIECESIZE + EXTRAPOS + AVALCORRX + AVALPOS;
+                y = FIRSTPIECEY + (MAXNPLAYS - j)*YPERPLAY + YPIECECORR + AVALCORRY + AVALCORRYF;
+            }
+        }
+        wh = whites[j];
+        while(wh != 0)
+        {
+            wh --;
+            RenderImage(renderer, "White.bmp", x, y);
+            y += AVALPOS;
+            i++;
+            if(i == 2)
+            {
+                x += 2*AVALPOS;
+                y = FIRSTPIECEY + (MAXNPLAYS - j)*YPERPLAY + YPIECECORR + AVALCORRY;
+            }
+            else if( i == 4)
+            {
+                x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + boardsize*PIECESIZE + EXTRAPOS + AVALCORRX + AVALPOS;
+                y = FIRSTPIECEY + (MAXNPLAYS - j)*YPERPLAY + YPIECECORR + AVALCORRY + AVALCORRYF;
+            }
+        }
+    }
+}
+
+
+/* Function to render the avaluation for the 7 board
+    param: the renderer to handle all the renderering in the window
+    param: size of the board, number of pieces per play
+    param: Array with the number of correct pieces in the right places per play
+    param: Array with the number of correct pieces in the wrong places per play
+    param: variable indicating how many plays have already been made
+*/
+void RenderAvalSeven(SDL_Renderer *renderer, int boardsize, int blacks[], int whites[], int nplays)
+{
+    int i = 0;
+    int j = 0;
+    int x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + boardsize*PIECESIZE + EXTRAPOS + AVALCORRX;
+    int y = FIRSTPIECEY + (MAXNPLAYS - i)*YPERPLAY + YPIECECORR;
+    int bl = 0;
+    int wh = 0;
+    for(j=0; j <= nplays; j++)
+    {
+        bl = blacks[j];
+        i=0;
+        x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + boardsize*PIECESIZE + EXTRAPOS + AVALCORRX;
+        y = FIRSTPIECEY + (MAXNPLAYS - j)*YPERPLAY + YPIECECORR + AVALCORRY;
+        while(bl != 0)
+        {
+            bl --;
+            RenderImage(renderer, "Black.bmp", x, y);
+            y += AVALPOS;
+            i++;
+            if(i%2 == 0)
+            {
+                x += AVALPOS;
+                y = FIRSTPIECEY + (MAXNPLAYS - j)*YPERPLAY + YPIECECORR + AVALCORRY;
+            }
+            if(i == 6)
+            {
+                y += AVALCORRYS;
+            }
+        }
+        wh = whites[j];
+        while(wh != 0)
+        {
+            wh --;
+            RenderImage(renderer, "White.bmp", x, y);
+            y += AVALPOS;
+            i++;
+            if(i%2 == 0)
+            {
+                x += AVALPOS;
+                y = FIRSTPIECEY + (MAXNPLAYS - j)*YPERPLAY + YPIECECORR + AVALCORRY;
+            }
+            if(i == 6)
+            {
+                y += AVALCORRYS;
+            }
+        }
+    }
+}
+
+
+/* Function to render the avaluation for each play
+    param: the renderer to handle all the renderering in the window
+    param: size of the board, number of pieces per play
+    param: Array with the number of correct pieces in the right places per play
+    param: Array with the number of correct pieces in the wrong places per play
+    param: variable indicating how many plays have already been made
+*/
+void RenderAval(SDL_Renderer *renderer, int boardsize, int blacks[], int whites[], int nplays)
+{
+    if(boardsize%2 == 0)
+    {
+        RenderAvalPair(renderer, boardsize, blacks, whites, nplays);
+    }
+    else if(boardsize == 5)
+    {
+        RenderAvalFive(renderer, boardsize, blacks, whites, nplays);
+    }
+    else if(boardsize == 7)
+    {
+        RenderAvalSeven(renderer, boardsize, blacks, whites, nplays);
+    }
+}
+
+
+/* Function to render the menus line in the bottom of the window
+    param: the renderer to handle all the rendering in the window
+    param: font for the names of each option
+*/
+void RenderMenu(SDL_Renderer *renderer, TTF_Font *Queen)
+{
+    SDL_Color white = {255, 255, 255};
+
+    RenderImage(renderer, "Home.bmp", XHOME, YHOME);
+    RenderImage(renderer, "New_Game.bmp", XNEWGAME, YNEWGAME);
+    RenderImage(renderer, "Statistics.bmp", XSTATISTICS, YSTATISTICS);
+    RenderText(XHOMETXT, YHOMETXT, "Home", Queen, &white, renderer);
+    RenderText(XNGTXT, YNGTXT, "New Game", Queen, &white, renderer);
+    RenderText(XSTATS, YSTATS, "Statistics", Queen, &white, renderer);
+}
+
+
+/* Function to render the home menu
+    param: the renderer to handle all the rendering in the window
+    param: font for the names of each option
+    param: font for the game name in the top
+*/
+void RenderHome(SDL_Renderer *renderer, TTF_Font *Queen, TTF_Font *QueenBig)
+{
+    SDL_Color white = {255, 255, 255};
+
+    RenderImage(renderer, "Fundo.bmp", BACKGROUNDX, BACKGROUNDY);
+    RenderImage(renderer, "TextBox.bmp", XTEXTBOX, YTEXTBOX);
+    RenderImage(renderer, "TextBox.bmp", XTEXTBOX, YTEXTBOX + BOXHEIGHT);
+    RenderImage(renderer, "TextBox.bmp", XTEXTBOX, YTEXTBOX + 2*BOXHEIGHT);
+    RenderText(XCGAME, YOPTION, "Current Game", Queen, &white, renderer);
+    RenderText(XNGAME, YOPTION + BOXHEIGHT, "New Game", Queen, &white, renderer);
+    RenderText(XHOMESTATS, YOPTION + 2*BOXHEIGHT, "Statistics", Queen, &white, renderer);
+    RenderImage(renderer, "ScreenshotJogo.bmp", XSCREENSHOT, YSCREENSHOT);
+    RenderText(XTITLE, YTITLE, "Mastermind", QueenBig, &white, renderer);
+}
+
+
+/* Function to render the new game menu
+    param: the renderer to handle all the rendering in the window
+    param: font for text of the namee
+    param: font for the game name in the top
+*/
+void RenderNewGame(SDL_Renderer *renderer, TTF_Font *Queen, TTF_Font *QueenBig, char *playername, int boardsize)
+{
+    SDL_Color white = {255, 255, 255};
+
+    RenderImage(renderer, "Fundo.bmp", BACKGROUNDX, BACKGROUNDY);
+    RenderImage(renderer, "Numeros.bmp", XNUMEROS, YNUMEROS);
+    RenderText(XTITLE, YTITLE, "Mastermind", QueenBig, &white, renderer);
+    RenderImage(renderer, "NameBox.bmp", XNAME, YNAME);
+    RenderText(XINFNAME, YINFNAME, "Introduza um nome de jogador!", Queen, &white, renderer);
 }
