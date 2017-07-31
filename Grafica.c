@@ -621,7 +621,7 @@ void RenderHome(SDL_Renderer *renderer, TTF_Font *Queen, TTF_Font *QueenBig)
     param: font for text of the namee
     param: font for the game name in the top
 */
-void RenderNewGame(SDL_Renderer *renderer, TTF_Font *Queen, TTF_Font *QueenBig, char *playername, int boardsize)
+void RenderNewGame(SDL_Renderer *renderer, TTF_Font *Queen, TTF_Font *QueenBig, char *playername, int boardsize, int nameread)
 {
     SDL_Color white = {255, 255, 255};
 
@@ -634,4 +634,52 @@ void RenderNewGame(SDL_Renderer *renderer, TTF_Font *Queen, TTF_Font *QueenBig, 
     {
         RenderImage(renderer, "Bordo.bmp", XNUMEROS, YNUMEROS + (boardsize-MINLEVEL)*NUMBERSIZE);
     }
+    if(playername[0]  == 0  &&  nameread == 0)
+    {
+        RenderText(XNAMEBOX + CORRXNAME, YNAMEBOX + CORRYNAME, "Username", Queen, &white, renderer);
+    }
+    else if(playername[0] != 0)
+    {
+        RenderText(XNAMEBOX + CORRXNAME, YNAMEBOX + CORRYNAME, playername, Queen, &white, renderer);
+    }
+}
+
+
+/* Function that renders the current time of the game
+    param: actual time of the game
+    param: the renderer to handle all the rendering in the window
+    param: font for the time rendering
+*/
+void RenderTime(time_t actualtime, SDL_Renderer *renderer, TTF_Font *font)
+{
+    int secs = 0;
+    int mins = 0;
+    char str[TIMERSIZE] = {0};
+    SDL_Color white = {255, 255, 255};
+
+    secs = actualtime%SIZEOFMIN;
+    mins = actualtime/SIZEOFMIN;
+    if(mins < PROBSIZES)
+    {
+        str[0] = '0';
+        str[1] = '0' + mins;
+    }
+    else
+    {
+        str[0] = '0' + mins/PROBSIZES;
+        str[1] = '0' + mins%PROBSIZES;
+    }
+    str[2] = ':';
+    if(secs < PROBSIZES)
+    {
+        str[3] = '0';
+        str[4] = '0' + secs;
+    }
+    else
+    {
+        str[3] = '0' + secs/PROBSIZES;
+        str[4] = '0' + secs%PROBSIZES;
+    }
+    RenderText(XTIMER, YTIMER - TITLEVAR, "Timer", font, &white, renderer);
+    RenderText(XTIMER, YTIMER, str, font, &white, renderer);
 }

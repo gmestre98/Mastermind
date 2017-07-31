@@ -26,3 +26,5 @@ void RenderAvalSeven(SDL_Renderer *, int, int [], int [], int);
 void RenderAval(SDL_Renderer *, int, int [], int [], int);
 void RenderMenu(SDL_Renderer *, TTF_Font *);
 void RenderHome(SDL_Renderer *, TTF_Font *, TTF_Font *);
+void RenderNewGame(SDL_Renderer *renderer, TTF_Font *, TTF_Font *, char *, int, int);
+void RenderTime(time_t, SDL_Renderer *, TTF_Font *);

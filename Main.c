@@ -5,7 +5,6 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
 #include "Defines.h"
-#include "Play.h"
 #include "Menus&Stats.h"
 
 int main(void)
@@ -34,17 +33,34 @@ int main(void)
     int gamestate = 0;                                                  // Current menu (0-Home, 1 - Current Game, 2 New Game, 3 Statistics)
     char *playername = NULL;                                            // Name of the player
     int nameread = 0;                                                   // Variable that indicates if the reading of the player name is on
+    int namepos = 0;                                                    // Position of the next letter in the player name
+    int auxsize = 0;                                                    // Auxiliar board size
+    char *auxname = NULL;                                               // Auxiliar player name
+    time_t actualtime = 0;                                              // Actual time of the game
+    time_t initialtime = 0;                                             // Initial time of the game
+    time_t savedtime = 0;                                               // Saved time for the current game
+    char *bpplayername = NULL;                                          // Name of the player with the best number of plays
+    int bpplays = MAXINT;                                               // Number of plays for the best game in numver of plays
+    int bptime = 0;                                                     // Time for the game with the best number of plays
+    int bpsize = 0;                                                     // Size of the board for the game with the best number of plays
+    char *btplayername = NULL;                                          // Name of the player for the game with the best time
+    int btplays = 0;                                                    // Number of plays for the game with the best time
+    int bttime = MAXINT;                                                // Time for the game with the best time
+    int btsize = 0;                                                     // Size of the board for the game with the best time
+    int ngames = 0;                                                     // Number of games for statistical purposes
+    int totaltime = 0;                                                  // Total time of play
+    int totalplays = 0;                                                 // Total number of plays for the games played
+    int totalboard = 0;                                                 // Total of all board sizes
 
 
-    printf("Introduza o tamanho do tabuleiro!\n");
-    scanf("%d", &boardsize);
 
-    combination = Generate(boardsize);
+    Memnames(&playername, &auxname, &bpplayername, &btplayername);
     InitEverything(WIDTH, HEIGHT,&serif, &Demonized, &Queen, &QueenBig, &Targa, &window, &renderer);
     LoadAvaluations(Avaluations);
     LoadColors(Colors);
     while(quit == 0)
     {
+        Timer(&actualtime, initialtime, savedtime, renderer, nplays, blacks, boardsize, gamestate);
         while(SDL_PollEvent (&event))
         {
             if( event.type == SDL_QUIT)
@@ -53,10 +69,10 @@ int main(void)
             }
             else if( event.type == SDL_KEYDOWN)
             {
+                NameInsert(event, auxname, nameread, &namepos, gamestate);
                 switch(event.key.keysym.sym)
                 {
                     case SDLK_q:
-                        quit = 1;
                         break;
                     default:
                         break;
@@ -67,11 +83,11 @@ int main(void)
                 switch(event.button.button)
                 {
                     case SDL_BUTTON_LEFT:
-                        BottomSelect(event, &gamestate);
+                        BottomSelect(event, &gamestate, playername, &auxsize);
                         switch(gamestate)
                         {
                             case 0:
-                                HomeSelect(event, &gamestate);
+                                HomeSelect(event, &gamestate, boardsize, playername, nplays, combination, &auxsize);
                                 break;
                             case 1:
                                 if(Loss(renderer, nplays) != 1 && Win(renderer, nplays, blacks, boardsize) != 1)
@@ -86,6 +102,12 @@ int main(void)
                                 }
                                 break;
                             case 2:
+                                SizeSelect(event, &auxsize);
+                                NameSelect(event, &nameread);
+                                OKPress(event, &gamestate, playername, &boardsize, &combination, &nameread, game,
+                                        blacks, whites, &nplays, auxname, namepos, auxsize, &initialtime, &savedtime,
+                                        actualtime, bpplayername, &bpplays, &bptime, &bpsize, btplayername, &btplays,
+                                        &bttime, &btsize, &ngames, &totalplays, &totaltime, &totalboard);
                                 break;
                             case 3:
                                 break;
@@ -115,9 +137,10 @@ int main(void)
                 RenderAval(renderer, boardsize, blacks, whites, nplays);
                 Loss(renderer, nplays);
                 Win(renderer, nplays, blacks, boardsize);
+                RenderTime(actualtime, renderer, Queen);
                 break;
             case 2:
-                RenderNewGame(renderer, Queen, QueenBig, playername, boardsize);
+                RenderNewGame(renderer, Queen, QueenBig, auxname, auxsize, nameread);
                 break;
             case 3:
                 break;
