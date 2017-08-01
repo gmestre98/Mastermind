@@ -1,5 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 
 #include "Grafica.h"
 
@@ -26,8 +31,8 @@ void InitFont()
 }
 
 
-// Function that creates a window for the application
-/*  param: width of the window
+/* Function that creates a window for the application
+    param: width of the window
     param: height of the window
     return: pointer to the window
 */
@@ -45,8 +50,8 @@ SDL_Window*CreateWindow(int width, int height)
 }
 
 
-// Function that creates a renderer for the application
-/*  param: width of the window
+/* Function that creates a renderer for the application
+    param: width of the window
     param: height of the window
     param: pointer to the previously created window
     return: pointer to the created renderer
@@ -65,8 +70,8 @@ SDL_Renderer* CreateRenderer(int width, int height, SDL_Window *window)
 }
 
 
-// Function that renders some text inside the app window
-/*  param: coordinate x
+/* Function that renders some text inside the app window
+    param: coordinate x
     param: coordinate y
     param: text string with the text to be written
     param: font used to render the text
@@ -154,35 +159,35 @@ void InitEverything(int width, int height, TTF_Font **_font, TTF_Font **_font2, 
     *_window = CreateWindow(width, height);
     *_renderer = CreateRenderer(width, height, *_window);
 
-    *_font = TTF_OpenFont(".//Fontes//FreeSerif.ttf", 16);
+    *_font = TTF_OpenFont("FreeSerif.ttf", 16);
     if(!*_font)
     {
         printf("TTF_OpenFont: %s\n", TTF_GetError());
         exit(EXIT_FAILURE);
     }
 
-    *_font2 = TTF_OpenFont(".//Fontes//Demonized.ttf", 24);
+    *_font2 = TTF_OpenFont("Demonized.ttf", 15);
     if(!* _font2)
     {
         printf("TTF_OpenFont: %s\n", TTF_GetError());
         exit(EXIT_FAILURE);
     }
 
-    *_font3 = TTF_OpenFont(".//Fontes//Queen.ttf", 18);
+    *_font3 = TTF_OpenFont("Queen.ttf", 18);
     if(!* _font3)
     {
         printf("TTF_OpenFont: %s\n", TTF_GetError());
         exit(EXIT_FAILURE);
     }
 
-    *_font4 = TTF_OpenFont(".//Fontes//Queen.ttf", 40);
+    *_font4 = TTF_OpenFont("Queen.ttf", 40);
     if(!* _font4)
     {
         printf("TTF_OpenFont: %s\n", TTF_GetError());
         exit(EXIT_FAILURE);
     }
 
-    *_font5 = TTF_OpenFont(".//Fontes//Targa.ttf", 14);
+    *_font5 = TTF_OpenFont("Targa.ttf", 18);
     if(!* _font5)
     {
         printf("TTF_OpenFont: %s\n", TTF_GetError());
@@ -193,6 +198,7 @@ void InitEverything(int width, int height, TTF_Font **_font, TTF_Font **_font2, 
 /* Function renders the board for the game
     param: the renderer to handle all rendering in the window
     param: size of the board, number of pieces per play
+    param: Array of the avaluation images
 */
 void RenderBoard(SDL_Renderer *renderer, int boardsize, SDL_Surface **Avaluations)
 {
@@ -251,12 +257,12 @@ void LoadAvaluations(SDL_Surface **Avaluations)
     for(i=0; i < MAX_LEVELS; i++)
     {
         // Reading the filename
-        sprintf(filename, ".//Avaluations//Aval_%01d.jpg", i+MINLEVEL);
+        sprintf(filename, "Aval_%01d.jpg", i+MINLEVEL);
         // Opening the image
         Avaluations[i] = IMG_Load(filename);
         if(Avaluations[i] == NULL)
         {
-            printf("ERROR! It was not possible to read the avaluation image %d", i+MINLEVEL);
+            printf("ERROR! It was not possible to load the avaluation image %d\n", i+MINLEVEL);
             exit(EXIT_FAILURE);
         }
     }
@@ -288,12 +294,12 @@ void LoadColors(SDL_Surface **Colors)
     for(i=0; i < NMBRCOLORS; i++)
     {
         // Reading the filename
-        sprintf(filename, ".//Colors//Cor%01d.jpg", i+1);
+        sprintf(filename, "Cor%01d.jpg", i+1);
         // Opening the image
         Colors[i] = IMG_Load(filename);
         if(Colors[i] == NULL)
         {
-            printf("ERROR! It was not possible to read the color image %d", i+1);
+            printf("ERROR! It was not possible to load the color image %d\n", i+1);
             exit(EXIT_FAILURE);
         }
     }
@@ -682,4 +688,89 @@ void RenderTime(time_t actualtime, SDL_Renderer *renderer, TTF_Font *font)
     }
     RenderText(XTIMER, YTIMER - TITLEVAR, "Timer", font, &white, renderer);
     RenderText(XTIMER, YTIMER, str, font, &white, renderer);
+}
+
+
+/* Function that renders all stats for the played games
+    param: the renderer to handle all the rendering in the window
+    param: the font for the game name
+    param: the font for the titles
+    param: the font for the info
+    param: name of the player of the game with best number of plays
+    param: number of plays for the game with best number of plays
+    param: time for the game with best number of plays
+    param: size of the board for the game with best number of plays
+    param: name of the player of the game with best time
+    param: number of plays for the game with best time
+    param: time for the game with best time
+    param: size of the board for the game with best time
+    param: total number of games
+    param: total of the time of all games
+    param: total of plays for all games
+    param: total of the sum of the boardsize of all games
+*/
+void RenderStats(SDL_Renderer *renderer, TTF_Font *GameFont, TTF_Font *Titlesfont, TTF_Font *font,
+                char *bpplayername, int bpplays, int bptime, int bpsize, char *btplayername, int btplays,
+                int bttime, int btsize, int ngames, int totaltime, int totalplays, int totalboard)
+{
+    SDL_Color white = {255, 255, 255};
+    SDL_Color black = {0, 0, 0};
+    char str[STRMAX] = {0};
+    float avtime = totaltime/ngames;
+    float avplays = totalplays/ngames;
+    float avsize = totalboard/ngames;
+
+
+    RenderImage(renderer, "Fundo.bmp", BACKGROUNDX, BACKGROUNDY);
+    RenderText(XTITLE, YTITLE, "Mastermind", GameFont, &white, renderer);
+    RenderText(XBESTPLAYS, YBESTPLAYS, "Won game in record plays", Titlesfont, &white, renderer);
+    RenderText(XBESTTIME, YBESTTIME, "Won game in record time", Titlesfont, &white, renderer);
+    RenderText(XAVARAGES, YAVARAGES, "Statistics for all games played", Titlesfont, &white, renderer);
+    RenderText(XBPPLAYER, YBPPLAYER, "Player name :", Titlesfont, &black, renderer);
+    RenderText(XBPPLAYS, YBPPLAYS, "Number of plays :", Titlesfont, &black, renderer);
+    RenderText(XBPTIME, YBPTIME, "Time of the game :", Titlesfont, &black, renderer);
+    RenderText(XBPSIZE, YBPSIZE, "Size of the board :", Titlesfont, &black, renderer);
+    RenderText(XBTPLAYER, YBTPLAYER, "Player name :", Titlesfont, &black, renderer);
+    RenderText(XBTPLAYS, YBTPLAYS, "Number of plays :", Titlesfont, &black, renderer);
+    RenderText(XBTTIME, YBTTIME, "Time of the game :", Titlesfont, &black, renderer);
+    RenderText(XBTSIZE, YBTSIZE, "Size of the board :", Titlesfont, &black, renderer);
+    RenderText(XNGAMES, YNGAMES, "Number of games played :", Titlesfont, &black, renderer);
+    RenderText(XAVTIME, YAVTIME, "Time per game :", Titlesfont, &black, renderer);
+    RenderText(XAVPLAYS, YAVPLAYS, "Plays per game :", Titlesfont, &black, renderer);
+    RenderText(XAVSIZE, YAVSIZE, "Av. size of the board :", Titlesfont, &black, renderer);
+
+
+    if(bpplayername[0] != 0)
+    {
+        RenderText(XBPPLAYERD, YBPPLAYER + STATSCORR, bpplayername, font, &white, renderer);
+        sprintf(str, "%d", bpplays);
+        RenderText(XBPPLAYSD, YBPPLAYS + STATSCORR, str, font, &white, renderer);
+        sprintf(str, "%d", bptime);
+        RenderText(XBPTIMED, YBPTIME + STATSCORR, str, font, &white, renderer);
+        sprintf(str, "%d", bpsize);
+        RenderText(XBPSIZED, YBPSIZE + STATSCORR, str, font, &white, renderer);
+    }
+
+    if(btplayername[0] != 0)
+    {
+        RenderText(XBTPLAYERD, YBTPLAYER + STATSCORR, btplayername, font, &white, renderer);
+        sprintf(str, "%d", btplays);
+        RenderText(XBTPLAYSD, YBTPLAYS + STATSCORR, str, font, &white, renderer);
+        sprintf(str, "%d", bttime);
+        RenderText(XBTTIMED, YBTTIME + STATSCORR, str, font, &white, renderer);
+        sprintf(str, "%d", btsize);
+        RenderText(XBTSIZED, YBTSIZE + STATSCORR, str, font, &white, renderer);
+    }
+
+    if(ngames != 0)
+    {
+        sprintf(str, "%d", ngames);
+        RenderText(XNGAMESD, YNGAMES + STATSCORR, str, font, &white, renderer);
+        sprintf(str, "%0.2f", avtime);
+        RenderText(XAVTIMED, YAVTIME + STATSCORR, str, font, &white, renderer);
+        sprintf(str, "%0.2f", avplays);
+        RenderText(XAVPLAYSD, YAVPLAYS + STATSCORR, str, font, &white, renderer);
+        sprintf(str, "%0.2f", avsize);
+        RenderText(XAVSIZED, YAVSIZE + STATSCORR, str, font, &white, renderer);
+    }
 }

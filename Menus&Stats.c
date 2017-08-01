@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <string.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
@@ -238,7 +240,7 @@ void NameSelect(SDL_Event event, int *nameread)
 */
 void OKPress(SDL_Event event, int *gamestate, char *playername, int *boardsize, int **combination,
             int *nameread, int game [][MAXBOARD], int blacks[], int whites[], int *nplays,
-            char *auxname, int namepos, int auxsize, time_t *initialtime, time_t *savedtime,
+            char *auxname, int *namepos, int auxsize, time_t *initialtime, time_t *savedtime,
             time_t actualtime, char *bpplayername, int *bpplays, int *bptime, int *bpsize,
             char *btplayername, int *btplays, int *bttime, int *btsize, int *ngames, int *totaltime,
             int *totalplays, int *totalboard)
@@ -264,17 +266,20 @@ void OKPress(SDL_Event event, int *gamestate, char *playername, int *boardsize, 
             blacks[i] = 0;
             whites[i] = 0;
         }
-        for(i=0; i < namepos; i++)
+        for(i=0; i < *namepos; i++)
         {
             playername[i] = auxname[i];
         }
         *nplays = 0;
         *nameread = 0;
+        *namepos = 0;
         *boardsize = auxsize;
         *combination = Generate(*boardsize);
         *gamestate = 1;
         *initialtime = time(NULL);
         *savedtime = 0;
+        NameCleanse(auxname);
+
     }
 }
 
@@ -287,11 +292,16 @@ void OKPress(SDL_Event event, int *gamestate, char *playername, int *boardsize, 
     param: Array with the number of correct pieces in the right places per play
     param: size of the board
     param: state of the program (1 = current game)
+    param: the generated combination
+    param: Array of the color images
+    param: A font for the Win and Loss Functions
 */
 void Timer(time_t *actualtime, time_t initialtime, time_t savedtime, SDL_Renderer * renderer,
-            int nplays, int blacks[], int boardsize, int gamestate)
+            int nplays, int blacks[], int boardsize, int gamestate, int *combination,
+            SDL_Surface **Colors, TTF_Font *font)
 {
-    if(gamestate == 1 && Loss(renderer, nplays) != 1 && Win(renderer, nplays, blacks, boardsize) != 1)
+    if(gamestate == 1 && Loss(renderer, nplays, blacks, boardsize, combination, Colors, font) != 1
+        && Win(renderer, nplays, blacks, boardsize, combination, Colors, font) != 1)
     {
         *actualtime = time(NULL) - initialtime + savedtime;
     }
@@ -339,7 +349,7 @@ void Memnames(char **playername, char **auxname, char **bpplayername, char **btp
     param: time for the current game
     param: size of the board for the current game
     param: Array with the number of correct pieces in the right places per play
-    param: name fo the player for the game with less plays
+    param: name of the player for the game with less plays
     param: number of plays for the game with less plays
     param: time for the game with less plays
     param: size of the board for the game with less plays
@@ -382,4 +392,285 @@ void StatsUpdate(char *playername, int nplays, time_t actualtime, int boardsize,
     *totaltime = *totaltime + actualtime;
     *totalplays = *totalplays + nplays;
     *totalboard = *totalboard + boardsize;
+}
+
+
+/* Function that writes the updated stats to a file when the program is terminated
+    param: name of the player for the game with less plays
+    param: number of plays for the game with less plays
+    param: time for the game with less plays
+    param: size of the board for the game with less plays
+    param: name of the player for the game with best time
+    param: number of plays for the game with best time
+    param: time of the game with best time
+    param: size of the board for the game with best time
+    param: total number of games
+    param: total of the time of all games
+    param: total of plays for all games
+    param: total of the sum of the boardsize of all games
+*/
+void SaveStats(char *bpplayername, int bpplays, int bptime, int bpsize, char *btplayername, int btplays,
+                int bttime, int btsize, int ngames, int totaltime, int totalplays, int totalboard)
+{
+    FILE *fp = NULL;
+    int i = 0;
+    int length = 0;
+
+    fp = fopen("stats.txt", "w");
+    if(fp == NULL)
+    {
+        printf("ERROR! It was not possible to open the stats file!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    fprintf(fp, "%d,%d,%d\n", bpplays, bptime, bpsize);
+    fprintf(fp, "%d,%d,%d\n", btplays,bttime, btsize);
+    fprintf(fp, "%d,%d,%d,%d\n", ngames, totaltime, totalplays, totalboard);
+    length = strlen(bpplayername);
+    fprintf(fp, "%d\n", length);
+    for(i=0; i < length; i++)
+    {
+        fprintf(fp, "%c", bpplayername[i]);
+    }
+    fprintf(fp, "\n");
+    length = strlen(btplayername);
+    fprintf(fp, "%d\n", length);
+    for(i=0; i < length; i++)
+    {
+        fprintf(fp, "%c", btplayername[i]);
+    }
+    fprintf(fp, "\n");
+    fclose(fp);
+}
+
+
+/* Function that writes the reads all the stats from a file when the program starts
+    param: name of the player for the game with less plays
+    param: number of plays for the game with less plays
+    param: time for the game with less plays
+    param: size of the board for the game with less plays
+    param: name of the player for the game with best time
+    param: number of plays for the game with best time
+    param: time of the game with best time
+    param: size of the board for the game with best time
+    param: total number of games
+    param: total of the time of all games
+    param: total of plays for all games
+    param: total of the sum of the boardsize of all games
+*/
+void ReadStats(char *bpplayername, int *bpplays, int *bptime, int *bpsize, char *btplayername, int *btplays,
+                int *bttime, int *btsize, int *ngames, int *totaltime, int *totalplays, int *totalboard)
+{
+    FILE *fp = NULL;
+    char str[STRMAX] = {0};
+    int i = 0;
+    int length = 0;
+
+    fp = fopen("stats.txt", "r");
+    if(fp != NULL)
+    {
+    fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            sscanf(str, "%d,%d,%d", bpplays, bptime, bpsize);
+        }
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            sscanf(str, "%d,%d,%d", btplays, bttime, btsize);
+        }
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            sscanf(str, "%d,%d,%d,%d", ngames, totaltime, totalplays, totalboard);
+        }
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            sscanf(str, "%d", &length);
+        }
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            for(i=0; i < length; i++)
+            {
+                bpplayername[i] = str[i];
+            }
+        }
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            sscanf(str, "%d", &length);
+        }
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            for(i=0; i < length; i++)
+            {
+                btplayername[i] = str[i];
+            }
+        }
+        fclose(fp);
+    }
+}
+
+
+/* Function that saves the curren game for a file when the program is terminated
+    param: array with the generated combination
+    param: Matrix with the selected pieces by the user for the current game
+    param: variable indicating how many plays have already been made
+    param: size of the board, number of pieces per play
+    param: Array with the number of correct pieces in the right places per play
+    param: Array with the number of correct pieces in the wrong places per play
+    param: Name of the player for the current game
+    param: Time of the game when the program was terminated
+*/
+void SaveGame(int *combination, int game [][MAXBOARD], int nplays, int boardsize,
+            int blacks[], int whites[], char *playername, time_t actualtime)
+{
+    FILE *fp = NULL;
+    int i = 0;
+    int j = 0;
+
+    fp = fopen("savedgame.txt", "w");
+    if(fp == NULL)
+    {
+        printf("ERROR! It was not possible to open the file to save the game\n");
+        exit(EXIT_FAILURE);
+    }
+    fprintf(fp, "%ld\n", actualtime);
+    fprintf(fp, "%d\n", boardsize);
+    for(i=0; i < boardsize; i++)
+    {
+        fprintf(fp, "%d,", combination[i]);
+    }
+    fprintf(fp, "\n");
+    fprintf(fp, "%d\n", nplays);
+    for(i=0; i < nplays; i++)
+    {
+        fprintf(fp, "%d,", blacks[i]);
+    }
+    fprintf(fp, "\n");
+    for(i=0; i < nplays; i++)
+    {
+        fprintf(fp, "%d,", whites[i]);
+    }
+    fprintf(fp, "\n");
+    for(i=0; i < nplays; i++)
+    {
+        for(j=0; j < boardsize; j++)
+        {
+            fprintf(fp, "%d,", game[i][j]);
+        }
+        fprintf(fp, "\n");
+    }
+    fprintf(fp, "%s\n", playername);
+    fclose(fp);
+}
+
+
+/* Function that opens the saved game when the program starts
+    param: array with the generated combination
+    param: Matrix with the selected pieces by the user for the current game
+    param: variable indicating how many plays have already been made
+    param: size of the board, number of pieces per play
+    param: Array with the number of correct pieces in the right places per play
+    param: Array with the number of correct pieces in the wrong places per play
+    param: Name of the player for the current game
+    param: variable that will store the saved time
+*/
+void OpenGame(int *combination, int game[][MAXBOARD], int *nplays, int *boardsize,
+            int blacks[], int whites[], char *playername, time_t *savedtime)
+{
+    FILE *fp = NULL;
+    char str[STRMAX] = {0};
+    char *token = NULL;
+    int auxnumber = 0;
+    int i = 0;
+    int j = 0;
+
+    fp = fopen("savedgame.txt", "r");
+    if(fp != NULL)
+    {
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            sscanf(str, "%ld", savedtime);
+        }
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            sscanf(str, "%d", boardsize);
+        }
+
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            token = strtok(str, ",");
+        }
+        while (token != NULL && i < *boardsize)
+        {
+            sscanf(token, "%d", &auxnumber);
+            combination[i] = auxnumber;
+            i++;
+            token = strtok(NULL, ",");
+        }
+
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            sscanf(str, "%d", nplays);
+        }
+
+        i = 0;
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            token = strtok(str, ",");
+        }
+        while (token != NULL && i < *nplays)
+        {
+            sscanf(token, "%d", &auxnumber);
+            blacks[i] = auxnumber;
+            i++;
+            token = strtok(NULL, ",");
+        }
+
+        i = 0;
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            token = strtok(str, ",");
+        }
+        while (token != NULL && i < *nplays)
+        {
+            sscanf(token, "%d", &auxnumber);
+            whites[i] = auxnumber;
+            i++;
+            token = strtok(NULL, ",");
+        }
+
+        i = 0;
+        fgets(str, STRMAX, fp);
+        while(i < *nplays  &&  str != NULL)
+        {
+            j = 0;
+            token = strtok(str, ",");
+            while(j < *boardsize && token != NULL)
+            {
+                sscanf(token, "%d", &auxnumber);
+                game[i][j] = auxnumber;
+                j++;
+                token = strtok(NULL, ",");
+            }
+            i++;
+            fgets(str, STRMAX, fp);
+        }
+        fgets(str, STRMAX, fp);
+        if(str != NULL)
+        {
+            strcpy(playername, str);
+        }
+        fclose(fp);
+    }
 }

@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <string.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
@@ -174,12 +176,28 @@ void Avaluate(int *combination, int game[][MAXBOARD], int nplays, int boardsize,
 /* Function to check if the player has lost and to render the correct image
     param: the renderer to handle all the rendering in the window
     param: variable indicating how many plays have already been made
+    param: Array with the number of correct pieces in the right places per play
+    param: size of the board, number of pieces per play
+    param: the correct combination generated
+    param: Array of the color images
+    param: A font for some text
 */
-int Loss(SDL_Renderer *renderer, int nplays)
+int Loss(SDL_Renderer *renderer, int nplays, int blacks[], int boardsize, int *combination,
+        SDL_Surface **Colors, TTF_Font *font)
 {
-    if(nplays == 10)
+    SDL_Color white = {255, 255, 255};
+    int i = 0;
+    int x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + EXTRAPOS;
+
+    if(nplays == 10 && blacks[nplays-1] != boardsize)
     {
-        RenderImage(renderer, "Defeat.bmp", XDEFEAT, YDEFEAT);
+        RenderImage(renderer, "Win.bmp", XWIN, YWIN);
+        RenderText(x - COMBTXTVAR, YCOMBTXT, "Key :", font, &white, renderer);
+        for(i=0; i < boardsize; i++)
+        {
+            RenderFromArray(renderer, Colors, combination[i] - 1, x, YCOMB);
+            x += PIECESIZE;
+        }
         return 1;
     }
     else
@@ -194,12 +212,26 @@ int Loss(SDL_Renderer *renderer, int nplays)
     param: variable indicating how many plays have already been made
     param: Array with the number of correct pieces in the right places per play
     param: size of the board, number of pieces per play
+    param: the correct combination generated
+    param: Array of the color images
+    param: A font for some text
 */
-int Win(SDL_Renderer *renderer, int nplays, int blacks[], int boardsize)
+int Win(SDL_Renderer *renderer, int nplays, int blacks[], int boardsize, int * combination,
+        SDL_Surface **Colors, TTF_Font *font )
 {
+    SDL_Color white = {255, 255, 255};
+    int i = 0;
+    int x = (MAXBOARD-boardsize)*BOARDCORR + FIRSTPIECEX + EXTRAPOS;
+
     if(blacks[nplays-1] == boardsize)
     {
         RenderImage(renderer, "Win.bmp", XWIN, YWIN);
+        RenderText(x - COMBTXTVAR, YCOMBTXT, "Key :", font, &white, renderer);
+        for(i=0; i < boardsize; i++)
+        {
+            RenderFromArray(renderer, Colors, combination[i] - 1, x, YCOMB);
+            x += PIECESIZE;
+        }
         return 1;
     }
     else

@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <string.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
@@ -28,3 +30,5 @@ void RenderMenu(SDL_Renderer *, TTF_Font *);
 void RenderHome(SDL_Renderer *, TTF_Font *, TTF_Font *);
 void RenderNewGame(SDL_Renderer *renderer, TTF_Font *, TTF_Font *, char *, int, int);
 void RenderTime(time_t, SDL_Renderer *, TTF_Font *);
+void RenderStats(SDL_Renderer *, TTF_Font *, TTF_Font *, TTF_Font *, char *, int, int,
+                int, char *, int, int, int, int, int, int, int);

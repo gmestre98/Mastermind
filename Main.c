@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
@@ -47,20 +48,25 @@ int main(void)
     int btplays = 0;                                                    // Number of plays for the game with the best time
     int bttime = MAXINT;                                                // Time for the game with the best time
     int btsize = 0;                                                     // Size of the board for the game with the best time
-    int ngames = 0;                                                     // Number of games for statistical purposes
+    int ngames = -1;                                                    // Number of games for statistical purposes
     int totaltime = 0;                                                  // Total time of play
     int totalplays = 0;                                                 // Total number of plays for the games played
     int totalboard = 0;                                                 // Total of all board sizes
 
 
-
+    combination = (int*)malloc(10*sizeof(int));
     Memnames(&playername, &auxname, &bpplayername, &btplayername);
     InitEverything(WIDTH, HEIGHT,&serif, &Demonized, &Queen, &QueenBig, &Targa, &window, &renderer);
     LoadAvaluations(Avaluations);
     LoadColors(Colors);
+    ReadStats(bpplayername, &bpplays, &bptime, &bpsize, btplayername, &btplays, &bttime, &btsize,
+                &ngames, &totaltime, &totalplays, &totalboard);
+    OpenGame(combination, game, &nplays, &boardsize, blacks, whites, playername, &savedtime);
+    initialtime = time(NULL);
     while(quit == 0)
     {
-        Timer(&actualtime, initialtime, savedtime, renderer, nplays, blacks, boardsize, gamestate);
+        Timer(&actualtime, initialtime, savedtime, renderer, nplays, blacks, boardsize,
+                gamestate, combination, Colors, Targa);
         while(SDL_PollEvent (&event))
         {
             if( event.type == SDL_QUIT)
@@ -90,7 +96,8 @@ int main(void)
                                 HomeSelect(event, &gamestate, boardsize, playername, nplays, combination, &auxsize);
                                 break;
                             case 1:
-                                if(Loss(renderer, nplays) != 1 && Win(renderer, nplays, blacks, boardsize) != 1)
+                                if(Loss(renderer, nplays, blacks, boardsize, combination, Colors, Targa) != 1
+                                    && Win(renderer, nplays, blacks, boardsize, combination, Colors, Targa) != 1)
                                 {
                                     ChooseColor(event, Avaluations, &selecolor, boardsize);
                                     PutPiece(event, nplays, boardsize, selecolor, game);
@@ -105,7 +112,7 @@ int main(void)
                                 SizeSelect(event, &auxsize);
                                 NameSelect(event, &nameread);
                                 OKPress(event, &gamestate, playername, &boardsize, &combination, &nameread, game,
-                                        blacks, whites, &nplays, auxname, namepos, auxsize, &initialtime, &savedtime,
+                                        blacks, whites, &nplays, auxname, &namepos, auxsize, &initialtime, &savedtime,
                                         actualtime, bpplayername, &bpplays, &bptime, &bpsize, btplayername, &btplays,
                                         &bttime, &btsize, &ngames, &totalplays, &totaltime, &totalboard);
                                 break;
@@ -135,14 +142,16 @@ int main(void)
                 RenderPlay(renderer, nplays, boardsize);
                 RenderPieces(renderer, Colors, game, boardsize);
                 RenderAval(renderer, boardsize, blacks, whites, nplays);
-                Loss(renderer, nplays);
-                Win(renderer, nplays, blacks, boardsize);
+                Loss(renderer, nplays, blacks, boardsize, combination, Colors, Targa);
+                Win(renderer, nplays, blacks, boardsize, combination, Colors, Targa);
                 RenderTime(actualtime, renderer, Queen);
                 break;
             case 2:
                 RenderNewGame(renderer, Queen, QueenBig, auxname, auxsize, nameread);
                 break;
             case 3:
+                RenderStats(renderer, QueenBig, Queen, Demonized, bpplayername, bpplays, bptime, bpsize,
+                            btplayername, btplays, bttime, btsize, ngames, totaltime, totalplays, totalboard);
                 break;
             default:
                 break;
@@ -151,7 +160,11 @@ int main(void)
         RenderMenu(renderer, Queen);
         SDL_RenderPresent(renderer);
         SDL_Delay(delay);
+        SDL_RenderClear(renderer);
     }
+    SaveGame(combination, game, nplays, boardsize, blacks, whites, playername, actualtime);
+    SaveStats(bpplayername, bpplays, bptime, bpsize, btplayername, btplays, bttime, btsize,
+                ngames, totaltime, totalplays, totalboard);
     TTF_CloseFont(serif);
     TTF_CloseFont(Demonized);
     TTF_CloseFont(Queen);
